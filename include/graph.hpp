@@ -14,6 +14,7 @@ namespace capmds {
 class Graph {
 public:
     Graph() = default;
+    Graph( u32 n, u32 m ) : n_( n ), m_( m ) {};
     ~Graph() = default;
     Graph( const Graph& graph ) {
         n_ = graph.n_;

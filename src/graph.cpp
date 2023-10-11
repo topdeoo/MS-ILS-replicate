@@ -5,7 +5,7 @@
 using namespace capmds;
 
 u32 Graph::vertex_nums() const {
-    return n_;
+    return vertices_.size();
 }
 
 u32 Graph::edge_nums() const {
@@ -17,13 +17,11 @@ const set<u32>& Graph::vertices() const {
 }
 
 void Graph::add_vertex( u32 v ) {
-    n_++;
     vertices_.insert( v );
     isolated_vertices_.insert( v );
 }
 
 void Graph::remove_vertex( u32 v ) {
-    n_--;
     vertices_.erase( v );
     isolated_vertices_.erase( v );
     auto neighbors = neighbors_.at( v );
@@ -77,7 +75,6 @@ u32 Graph::get_lower_degree_vertex() const {
 }
 
 void Graph::add_edge( u32 u, u32 v ) {
-    m_++;
     neighbors_[u].insert( v );
     neighbors_[v].insert( u );
     isolated_vertices_.erase( u );
@@ -85,7 +82,6 @@ void Graph::add_edge( u32 u, u32 v ) {
 }
 
 void Graph::remove_edge( u32 u, u32 v ) {
-    m_--;
     neighbors_[u].erase( v );
     neighbors_[v].erase( u );
     if ( neighbors_[u].size() == 0 ) {

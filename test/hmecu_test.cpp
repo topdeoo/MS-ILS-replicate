@@ -1,11 +1,12 @@
 #include "capmds.hpp"
 #include <fstream>
 
-int main() {
-    std::ifstream fin;
-    fin.open( "test_graph/fig1.txt" );
-    capmds::Solver solver;
-    solver.init( fin );
+using namespace capmds;
 
+int main() {
+    std::ifstream fin( "test_graph/fig1.graph", std::ios::in );
+    Solver solver;
+    solver.init( fin );
+    solver.solve();
     return 0;
 }

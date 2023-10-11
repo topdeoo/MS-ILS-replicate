@@ -1,0 +1,33 @@
+# How to build
+
+make sure that you have installed the following packages:
+
+- range-v3
+- ...
+
+when you are in the root directory of the project, run the following command:
+
+```bash
+mkdir -p build
+cd build
+cmake ..
+make -j`nproc`
+```
+
+# How to run
+
+when you are in the root directory of the project, run the following command:
+
+```bash
+python script/generate.py
+python run_all.py
+```
+
+then you can check the correctness of solution with the following command:
+
+```bash
+cd test
+make -j`nproc`
+cd -
+python script/check_all.py
+```
