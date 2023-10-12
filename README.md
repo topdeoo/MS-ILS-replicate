@@ -48,3 +48,7 @@ make -j`nproc`
 cd -
 python script/check_all.py
 ```
+
+# Run on huge graph
+
+remember to set time limit by using `ulimit -t 2000; ${cmd}` or something like that.
