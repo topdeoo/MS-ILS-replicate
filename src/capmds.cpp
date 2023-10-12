@@ -1,13 +1,14 @@
 #include "capmds.hpp"
 #include "type.hpp"
 #include <chrono>
+#include <iostream>
 #include <utility>
 #include <vector>
 
 using namespace capmds;
 
 void Solver::print() {
-    std::cout << best_solution_.size() << std::endl;
+    // std::cout << best_solution_.size() << std::endl;
 
     // for ( auto& v : best_solution_ ) {
     //     std::cout << v << " " << dominating_who_[v].size() << std::endl;
@@ -18,13 +19,18 @@ void Solver::print() {
     // }
 
     /* TAG for debugging */
+    // for ( auto& v : best_solution_ ) {
+    //     std::cout << v << " " << best_solution_dominating_who_[v].size() << std::endl;
+    //     for ( auto& u : best_solution_dominating_who_[v] ) {
+    //         std::cout << u << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+    std::cout << best_solution_.size() << std::endl;
     for ( auto& v : best_solution_ ) {
-        std::cout << v << " " << best_solution_dominating_who_[v].size() << std::endl;
-        for ( auto& u : best_solution_dominating_who_[v] ) {
-            std::cout << u << " ";
-        }
-        std::cout << std::endl;
+        std::cout << v << " ";
     }
+    std::cout << std::endl;
 }
 
 void Solver::debug() {
@@ -92,7 +98,7 @@ void Solver::solve() {
         if ( current_solution_.size() < best_solution_.size() ) {
             best_solution_ = current_solution_;
             /* TAG for debugging */
-            best_solution_dominating_who_ = dominating_who_;
+            // best_solution_dominating_who_ = dominating_who_;
         }
         u32 not_improved = 0;
         while ( ( not_improved < N1_ ) && ( best_solution_.size() > LB2 ) ) {
@@ -102,21 +108,36 @@ void Solver::solve() {
             H_MECU( current_graph );
             if ( current_solution_.size() < previos_solution.size() ) {
                 if ( current_solution_.size() < best_solution_.size() ) {
-                    std::cout << "Can improve the best solution" << std::endl;
+                    // std::cout << "Can improve the best solution" << std::endl;
                     best_solution_ = current_solution_;
                     /* TAG for debugging */
-                    best_solution_dominating_who_ = dominating_who_;
+                    // best_solution_dominating_who_ = dominating_who_;
                 }
                 not_improved = 0;
             } else {
                 current_solution_ = previos_solution;
                 not_improved += 1;
             }
+
+            // TAG time limit
+            if ( std::chrono::duration_cast<std::chrono::seconds>( std::chrono::steady_clock::now()
+                                                                   - begin_ )
+                   .count()
+                 > 1800 ) {
+                return;
+            }
         }
         current_solution_.clear();
         dominated_vertices_.clear();
         dominating_who_.clear();
         iter += 1;
+        // TAG time limit
+        if ( std::chrono::duration_cast<std::chrono::seconds>( std::chrono::steady_clock::now()
+                                                               - begin_ )
+               .count()
+             > 1800 ) {
+            return;
+        }
     }
 }
 

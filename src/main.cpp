@@ -31,10 +31,11 @@ int main( int argc, char* argv[] ) {
     }
 
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    solver.set_begin();
     solver.solve();
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-    std::cout << std::chrono::duration_cast<std::chrono::microseconds>( end - begin ).count() << "us"
+    std::cout << std::chrono::duration_cast<std::chrono::seconds>( end - begin ).count() << "s"
               << std::endl;
 
 #ifdef DEBUG

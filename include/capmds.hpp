@@ -56,6 +56,8 @@ private:
     map<u32, u32> ref_counts_;      // ref_counts_[i] indicates the number of dominating nodes of node i
     map<u32, u32> node_capacities_; // node_capacities_[i] indicates the capacity of node i
 
+    std::chrono::steady_clock::time_point begin_;
+
     std::random_device rd_ { "hw" };
     std::uniform_real_distribution<fp64> d_ { 0, 1 };
 
@@ -65,6 +67,8 @@ public:
     void set_A( u32 A ) { A_ = A; }
     void set_pr( fp64 pr ) { pr_ = pr; }
     void set_node_capacities( u32 frac );
+
+    void set_begin() { begin_ = std::chrono::steady_clock::now(); }
 
 public:
     u32 get_capacity( u32 v ) const;
