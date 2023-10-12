@@ -1,12 +1,12 @@
 #pragma once
 
-#include <queue>
-#include <utility>
-#include <vector>
 #ifndef __GRAPH_HPP__
 #define __GRAPH_HPP__
 
 #include "type.hpp"
+#include <queue>
+#include <utility>
+#include <vector>
 
 namespace capmds {
 
@@ -46,7 +46,6 @@ public:
     std::pair<bool, u32> isolate_vertex();
     std::pair<bool, u32> leaf_vertex();
     u32 degree( u32 v ) const;
-    u32 get_lower_degree_vertex() const;
 
     // function of edge
     void add_edge( u32 u, u32 v );

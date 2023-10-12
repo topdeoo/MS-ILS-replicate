@@ -14,12 +14,14 @@ typedef uint32_t u32;
 typedef uint16_t u16;
 typedef uint8_t u8;
 
-template <typename K, typename V>
+typedef double fp64;
+
+template<typename K, typename V>
 using map = std::unordered_map<K, V>;
 
-template <typename Val>
+template<typename Val>
 using set = std::unordered_set<Val>;
 
-};  // namespace capmds
+}; // namespace capmds
 
-#endif  // __TYPE_HPP__
+#endif // __TYPE_HPP__

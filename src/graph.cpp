@@ -1,6 +1,4 @@
 #include "graph.hpp"
-#include "type.hpp"
-#include <utility>
 
 using namespace capmds;
 
@@ -58,20 +56,10 @@ std::pair<bool, u32> Graph::leaf_vertex() {
 }
 
 u32 Graph::degree( u32 v ) const {
-    return neighbors_.at( v ).size();
-}
-
-// TODO can be optimized
-u32 Graph::get_lower_degree_vertex() const {
-    u32 min_degree = 0;
-    u32 min_degree_vertex = 0;
-    for ( auto v : vertices_ ) {
-        if ( min_degree > degree( v ) ) {
-            min_degree = degree( v );
-            min_degree_vertex = v;
-        }
+    if ( !has_vertex( v ) || neighbors_.find( v ) == neighbors_.end() ) {
+        return 0;
     }
-    return min_degree_vertex;
+    return neighbors_.at( v ).size();
 }
 
 void Graph::add_edge( u32 u, u32 v ) {

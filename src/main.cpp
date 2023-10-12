@@ -1,6 +1,7 @@
 #include "capmds.hpp"
 #include <chrono>
-#include <fmt/core.h>
+
+// #define DEBUG
 
 using namespace capmds;
 
@@ -14,12 +15,20 @@ int main( int argc, char* argv[] ) {
         fin.open( argv[1] );
     }
 
+    bool capacity_random = strcmp( argv[2], "-r" ) == 0;
+
+    /* Due to the statement in paper */
     solver.set_N0( 75 );
     solver.set_N1( 150 );
     solver.set_pr( 0.4 );
     solver.set_A( 5 );
 
     solver.init( fin );
+
+    if ( capacity_random ) {
+        u32 frac = std::atoi( argv[3] );
+        solver.set_node_capacities( frac );
+    }
 
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     solver.solve();
@@ -28,6 +37,11 @@ int main( int argc, char* argv[] ) {
     std::cout << std::chrono::duration_cast<std::chrono::microseconds>( end - begin ).count() << "us"
               << std::endl;
 
+#ifdef DEBUG
+    solver.debug();
+#else
     solver.print();
+#endif
+
     return 0;
 }

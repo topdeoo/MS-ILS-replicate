@@ -1,22 +1,34 @@
 #include "capmds.hpp"
-#include "graph.hpp"
-#include <algorithm>
-#include <cstddef>
-#include <fmt/core.h>
-#include <math.h>
-#include <range/v3/algorithm/sort.hpp>
+#include "type.hpp"
+#include <utility>
+#include <vector>
 
 using namespace capmds;
 
 void Solver::print() {
     std::cout << best_solution_.size() << std::endl;
+
+    // for ( auto& v : best_solution_ ) {
+    //     std::cout << v << " " << dominating_who_[v].size() << std::endl;
+    //     for ( auto& u : dominating_who_[v] ) {
+    //         std::cout << u << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+
+    /* TAG for debugging */
     for ( auto& v : best_solution_ ) {
-        std::cout << v << " " << dominating_who_[v].size() << std::endl;
-        for ( auto& u : dominating_who_[v] ) {
+        std::cout << v << " " << best_solution_dominating_who_[v].size() << std::endl;
+        for ( auto& u : best_solution_dominating_who_[v] ) {
             std::cout << u << " ";
         }
         std::cout << std::endl;
     }
+}
+
+void Solver::debug() {
+    std::cout << "number of dominating and dominated is " << dominated_vertices_.size() << std::endl;
+    std::cout << "number of best solution is " << best_solution_.size() << std::endl;
 }
 
 /**
@@ -24,7 +36,6 @@ void Solver::print() {
  * 2. Initialize the capacity of each vertex
  * 3. Initialize the reference count of each vertex
  */
-// FIXME capacity of each vertex can be variable
 void Solver::init( std::ifstream& fin ) {
     u32 n, m, k;
     fin >> n >> m >> k;
@@ -46,21 +57,54 @@ void Solver::init( std::ifstream& fin ) {
     }
 }
 
+void Solver::set_node_capacities( u32 frac ) {
+    auto vertices = graph_.vertices();
+    for ( auto& v : vertices ) {
+        node_capacities_[v] = static_cast<u32>( static_cast<fp64>( graph_.degree( v ) ) / frac );
+    }
+}
+
+/**
+ * @brief MS-ILS : Input Graph G = (V , E) ---> graph_
+ * 1. compute LB2 ---> calculate_lower_bound()
+ * 2. i = 0 ---> iter = 0
+ * 3. best = V ---> best_solution_ = V
+ * 4. begin iteration-1
+ * 5. H_MECU() get current solution ---> H_MECU( graph_ )
+ * 6. not_improved = 0 (NOTE: here should update the best solution)
+ * 7. begin iteration-2
+ * 8. Perturb() get current graph and a new solution which store in candidate_solution_ ---> Perturb(
+ * current_solution_ ) (NOTE: should store the current_solution_ before perturb)
+ * 9. H_MECU() get a new current solution ---> H_MECU( current_graph )
+ * 10. update the current_solution_ , the best_solution_ and not_improved
+ * 11. end iteration-2
+ * 12. iter += 1
+ * 13. end iteration-1
+ */
+
 void Solver::solve() {
     u32 LB2 = calculate_lower_bound();
     u32 iter = 0;
     best_solution_ = graph_.vertices();
     while ( ( iter < N0_ ) && ( best_solution_.size() > LB2 ) ) {
         H_MECU( graph_ );
-        best_solution_ = current_solution_;
+        if ( current_solution_.size() < best_solution_.size() ) {
+            best_solution_ = current_solution_;
+            /* TAG for debugging */
+            best_solution_dominating_who_ = dominating_who_;
+        }
         u32 not_improved = 0;
         while ( ( not_improved < N1_ ) && ( best_solution_.size() > LB2 ) ) {
             auto previos_solution = current_solution_;
-            Graph current_graph = Perturb( current_solution_ );
+            Graph current_graph = Perturb();
+            current_solution_ = candidate_solution_;
             H_MECU( current_graph );
             if ( current_solution_.size() < previos_solution.size() ) {
                 if ( current_solution_.size() < best_solution_.size() ) {
+                    std::cout << "Can improve the best solution" << std::endl;
                     best_solution_ = current_solution_;
+                    /* TAG for debugging */
+                    best_solution_dominating_who_ = dominating_who_;
                 }
                 not_improved = 0;
             } else {
@@ -68,11 +112,14 @@ void Solver::solve() {
                 not_improved += 1;
             }
         }
+        current_solution_.clear();
+        dominated_vertices_.clear();
+        dominating_who_.clear();
         iter += 1;
     }
 }
 
-double Solver::random_double() {
+fp64 Solver::random_double() {
     return d_( rd_ );
 }
 
@@ -97,11 +144,40 @@ u64 Solver::get_sum_of_v_neighbor_capacities( u32 v ) {
     return sum;
 }
 
+/**
+ * when leader dominates worker, do the following things:
+ * 1. add worker to the dominating_who_[leader]
+ * 2. decrease the capacity of leader
+ * 3. increase the reference count of worker
+ */
 void Solver::dominate( u32 leader, u32 worker ) {
+    dominated_vertices_.insert( worker );
     dominating_who_[leader].insert( worker );
     node_capacities_[leader] -= 1;
     ref_counts_[worker] += 1;
 }
+
+void Solver::remove_from_solution( u32 v ) {
+    current_solution_.erase( v );
+    ref_counts_[v] -= 1;
+    if ( ref_counts_[v] < 1 ) {
+        dominated_vertices_.erase( v );
+    }
+    for ( auto& u : dominating_who_[v] ) {
+        ref_counts_[u] -= 1;
+        if ( ref_counts_[u] < 1 ) {
+            dominated_vertices_.erase( u );
+        }
+    }
+    dominating_who_.erase( v );
+}
+
+/**
+ * NOTE this function is not sure to be correct
+ * 1. sort the vector of vertices by the min(c(v), deg(v)) of each vertex in non-increasing order
+ * 2. calculate the sum of the first k vertices's min(c(v), deg(v))(i.e. ec(v))
+ * 3. if the sum is greater than or equal to the number of vertices, then return k
+ */
 
 u32 Solver::calculate_lower_bound() {
     auto vertices = graph_.vertices();
@@ -131,6 +207,11 @@ u32 Solver::calculate_lower_bound() {
  * A partial solution S ----> current_solution_
  * input graph G = (V , E) -----> graph_
  * the current graph Gc = (Vc , Ec ) ----> which_graph
+ * @details
+ * 1. initialize the reference count of each vertex in current_solution_
+ * 2. initialize the current graph Gc = (Vc , Ec )
+ * 3. dominating_node( Gc )
+ * 4. redundant_removal()
  */
 void Solver::H_MECU( Graph& which_graph ) {
 
@@ -148,6 +229,16 @@ void Solver::H_MECU( Graph& which_graph ) {
     /* Debugging */
     // std::cout << "current solution size is " << current_solution_.size() << std::endl;
 }
+
+/**
+ * while the current graph is not empty, do the following things:
+ * 1. isolate vertex rules
+ * 2. leaf vertex rules
+ * 3. multiple adjacent vertices rules
+ * 4. rules above select a vertex v, we add v into current_solution_ (NOTE: we should update the refence
+ * count of v here since v can cover itself)
+ * 5. dominated_node( current_graph, v ) to apply the dominated node rules
+ */
 
 void Solver::dominating_node( Graph& current_graph ) {
     while ( current_graph.vertex_nums() ) {
@@ -226,14 +317,29 @@ void Solver::dominating_node( Graph& current_graph ) {
             }
 
             current_solution_.insert( v );
+            dominated_vertices_.insert( v );
         }
         // Hence v cover itself
         ref_counts_[v] += 1;
-        dominated_node( current_graph, v );
+        auto need_remove = dominated_node( current_graph, v );
+        for ( auto& u : need_remove ) {
+            ref_counts_[u] += 1;
+            current_graph.remove_vertex( u );
+        }
+        current_graph.remove_vertex( v );
     }
 }
 
-void Solver::dominated_node( Graph& current_graph, const u32 v ) {
+/**
+ * @brief here we apply the greedy algorithm to select the vertices that can be dominated by v
+ * 1. if the capacity of v is greater than or equal to the degree of v, then we can dominate all the
+ * neighbors of v
+ * 2. else we sort the neighbors of v by the degree of each vertex(NOTE: in Gc) in non-decreasing order,
+ * and we select the first k(NOTE: k indicates the capacity of vertex v) vertices to dominate
+ * 3. we should delete v and vertice who are just dominated by v from Gc
+ */
+
+std::vector<u32> Solver::dominated_node( Graph& current_graph, const u32 v ) {
     auto need_remove = std::vector<u32>();
 
     if ( node_capacities_[v] >= current_graph.degree( v ) ) {
@@ -254,12 +360,20 @@ void Solver::dominated_node( Graph& current_graph, const u32 v ) {
         }
     }
 
-    for ( auto& u : need_remove ) {
-        ref_counts_[u] += 1;
-        current_graph.remove_vertex( u );
-    }
-    current_graph.remove_vertex( v );
+    return need_remove;
 }
+
+/**
+ * 1. select a set called R whose elements staify the following conditions: v is in the current solution
+ * and the reference count of v is greater than or equal to 2 and all the reference count of all
+ * vertices that are dominated by v are greater than or equal to 2
+ * 2. while R is not empty, do the following things:
+ * 3. we have probability pr_ to select a vertex from R randomly, else we select the vertex whose degree
+ * in G is minimum
+ * 4. remove the vertex from current_solution_ and R
+ * 5. update the reference count of the vertex and the vertices that are dominated by the vertex
+ * 6. recalculate R
+ */
 
 void Solver::redundant_removal() {
     auto redundant = [&]( const set<u32>& belongs_to ) {
@@ -282,33 +396,60 @@ void Solver::redundant_removal() {
         if ( u_0 <= pr_ ) {
             v = random_select( redunant_set );
         } else {
-            v = graph_.get_lower_degree_vertex();
+            // TODO optimize this part
+            std::vector<std::pair<u32, u32>> temp = std::vector<std::pair<u32, u32>>();
+            for ( auto& v_i : redunant_set ) {
+                temp.emplace_back( v_i, graph_.degree( v_i ) );
+            }
+            ranges::sort( temp, [&]( const std::pair<u32, u32>& a, const std::pair<u32, u32>& b ) {
+                return a.second < b.second;
+            } );
+            v = temp[0].first;
         }
-        current_solution_.erase( v );
+
         redunant_set.erase( v );
 
-        // Hence v cover itself
-        ref_counts_[v] -= 1;
-        for ( auto& u : dominating_who_[v] ) {
-            ref_counts_[u] -= 1;
-        }
+        remove_from_solution( v );
 
         redunant_set = redundant( redunant_set );
     }
 }
 
-Graph Solver::Perturb( set<u32>& partial_solution ) {
+/**
+ * 1. initialize the current graph Gc = (Vc , Ec ) and clear the candidate_solution_
+ * 2. randomly select a vertex v from partial_solution(i.e. current_solution_)
+ * 3. add v into candidate_solution_
+ * 4. apply the dominated node rules to Gc (NOTE: the procedure just dominates the vertices but does not
+ * remove the vertices from Gc)
+ * 5. remove all selected vertices from the partial_solution and current graph Gc
+ */
+
+Graph Solver::Perturb() {
     Graph current_graph = graph_;
     candidate_solution_.clear();
-    size_t k = ( partial_solution.size() + 1 ) / A_;
+    size_t k = static_cast<size_t>( static_cast<fp64>( current_solution_.size() ) / A_ );
     while ( candidate_solution_.size() < k ) {
-        auto v = random_select( partial_solution );
-        candidate_solution_.insert( v );
-        partial_solution.erase( v );
-        for ( auto& u : graph_.get_neighbors( v ) ) {
-            partial_solution.erase( u );
+        // NOTE here the paper does not mention the partial_solution can be empty
+        // If the partial_solution is empty, the candidate_solution_ will not copy k
+        // vertices into itself (?)
+        if ( current_solution_.empty() ) {
+            break;
         }
-        dominated_node( current_graph, v );
+        auto v = random_select( current_solution_ );
+
+        auto need_remove = dominated_node( current_graph, v );
+
+        candidate_solution_.insert( v );
+
+        for ( auto& u : need_remove ) {
+            ref_counts_[u] += 1;
+            current_graph.remove_vertex( u );
+            if ( current_solution_.find( u ) != current_solution_.end() ) {
+                remove_from_solution( u );
+            }
+        }
+        current_graph.remove_vertex( v );
+        remove_from_solution( v );
     }
     return current_graph;
 }

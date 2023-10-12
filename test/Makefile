@@ -3,6 +3,7 @@ CXXFLAGS := -std=c++2a -Wall -Wextra -Werror -pedantic -ggdb -O
 CXXFLAGS += -I../include
 INCLUDE_DIR := ../include
 SOURCE_DIR := ../src
+EXE := checker hmecu
 
 .PHONY: checker hmecu clean
 
@@ -25,4 +26,4 @@ capmds.o: $(SOURCE_DIR)/capmds.cpp $(INCLUDE_DIR)/capmds.hpp
 	$(CXX) $(CXXFLAGS) -c $(SOURCE_DIR)/capmds.cpp
 
 clean:
-	rm -f hmecu *.o
+	rm -f $(EXE) *.o

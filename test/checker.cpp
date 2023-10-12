@@ -1,6 +1,7 @@
 #include "graph.hpp"
 #include <cassert>
 #include <fstream>
+#include <iostream>
 #include <string>
 
 using namespace std;
@@ -36,6 +37,10 @@ int main( int argc, char* argv[] ) {
 
     string s;
     fin >> s;
+    if ( s.empty() ) {
+        cout << solutionfilename << " have not run yet" << endl;
+        return 0;
+    }
 
     u32 solution_num;
     fin >> solution_num;
@@ -45,18 +50,27 @@ int main( int argc, char* argv[] ) {
         u32 v, t;
         fin >> v >> t;
 
-        assert( t <= k );
+        if ( t > k ) {
+            cout << solutionfilename << " wrong" << endl;
+            return 0;
+        }
         x.insert( v );
 
         for ( u32 j = 0; j < t; j++ ) {
             u32 u;
             fin >> u;
-            assert( graph.is_neighbor( v, u ) );
+            if ( !graph.is_neighbor( u, v ) ) {
+                cout << solutionfilename << " wrong" << endl;
+                return 0;
+            }
             x.insert( u );
         }
     }
 
-    assert( x.size() == n );
+    if ( x.size() == n )
+        cout << solutionfilename << " correct" << endl;
+    else
+        cout << solutionfilename << " wrong" << endl;
 
     return 0;
 }

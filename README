@@ -19,9 +19,12 @@ make -j`nproc`
 when you are in the root directory of the project, run the following command:
 
 ```bash
+pip install cyaron
 python script/generate.py
 python run_all.py
 ```
+
+> the python script may generate incorrect data or stuck for reasons, if so, run `zsh script/run_all.zsh` instead.
 
 then you can check the correctness of solution with the following command:
 
