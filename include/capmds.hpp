@@ -10,8 +10,8 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
+#include <cstring>
 #include <ctime>
-#include <fmt/core.h>
 #include <fstream>
 #include <iostream>
 #include <math.h>

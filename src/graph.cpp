@@ -17,6 +17,7 @@ const set<u32>& Graph::vertices() const {
 void Graph::add_vertex( u32 v ) {
     vertices_.insert( v );
     isolated_vertices_.insert( v );
+    neighbors_[v] = set<u32>();
 }
 
 void Graph::remove_vertex( u32 v ) {
