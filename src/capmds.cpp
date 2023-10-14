@@ -421,6 +421,15 @@ void Solver::redundant_removal() {
     auto redunant_set = redundant( current_solution_ );
 
     while ( !redunant_set.empty() ) {
+
+        // TAG time limit
+        if ( std::chrono::duration_cast<std::chrono::seconds>( std::chrono::steady_clock::now()
+                                                               - begin_ )
+               .count()
+             > 1800 ) {
+            return;
+        }
+
         auto u_0 = random_double();
         u32 v = 0;
         if ( u_0 <= pr_ ) {
