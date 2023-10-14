@@ -26,8 +26,7 @@ int main( int argc, char* argv[] ) {
     solver.init( fin );
 
     if ( capacity_random ) {
-        u32 frac = std::atoi( argv[3] );
-        solver.set_node_capacities( frac );
+        solver.set_node_capacities( fin );
     }
 
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();

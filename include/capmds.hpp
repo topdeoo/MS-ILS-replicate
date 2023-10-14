@@ -66,7 +66,7 @@ public:
     void set_N1( u32 N1 ) { N1_ = N1; }
     void set_A( u32 A ) { A_ = A; }
     void set_pr( fp64 pr ) { pr_ = pr; }
-    void set_node_capacities( u32 frac );
+    void set_node_capacities( std::ifstream& fin );
 
     void set_begin() { begin_ = std::chrono::steady_clock::now(); }
 

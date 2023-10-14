@@ -64,10 +64,11 @@ void Solver::init( std::ifstream& fin ) {
     }
 }
 
-void Solver::set_node_capacities( u32 frac ) {
-    auto vertices = graph_.vertices();
-    for ( auto& v : vertices ) {
-        node_capacities_[v] = static_cast<u32>( static_cast<fp64>( graph_.degree( v ) ) / frac );
+void Solver::set_node_capacities( std::ifstream& fin ) {
+    while ( !fin.eof() ) {
+        u32 v, capacity;
+        fin >> v >> capacity;
+        node_capacities_[v] = capacity;
     }
 }
 
@@ -99,6 +100,13 @@ void Solver::solve() {
             best_solution_ = current_solution_;
             /* TAG for debugging */
             // best_solution_dominating_who_ = dominating_who_;
+        }
+        // TAG time limit
+        if ( std::chrono::duration_cast<std::chrono::seconds>( std::chrono::steady_clock::now()
+                                                               - begin_ )
+               .count()
+             > 1800 ) {
+            return;
         }
         u32 not_improved = 0;
         while ( ( not_improved < N1_ ) && ( best_solution_.size() > LB2 ) ) {
